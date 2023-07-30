@@ -1,64 +1,49 @@
-const pantalon = {
-    title: 'Pantalon',
-    description: 'prenda de vestir',
-    price: 100,
-    thumbnail: 'pantalon.jpg',
-    code: 12,
-    stock: 10
-}
-
-const remera = {
-    id: 1,
-    title: 'Remera',
-    description: 'prenda de vestir',
-    price: 60,
-    thumbnail: 'remera.jpg',
-    code: 123,
-    stock: 10
-}
-
-const medias = {
-    title: 'Medias',
-    description: 'prenda de vestir',
-    price: null,
-    thumbnail: 'medias.jpg',
-    code: 1234,
-    stock: 10
-}
+import { promises as fs } from 'fs'
 
 class Product {
-    constructor({ id, title, price, thumbnail, description, code, stock }) {
-        this.id = id;
+    constructor({ title, price, thumbnail, description, code, stock }) {
         this.title = title;
         this.price = price;
         this.thumbnail = thumbnail;
         this.description = description;
         this.code = code;
         this.stock = stock;
+        this.id = Product.increId();
+    }
+
+    static increId() {
+        if (this.incrementId) {
+            this.incrementId++
+        } else {
+            this.incrementId = 1
+        }
+        return this.incrementId
     }
 }
 
 class ProductManager {
-    constructor() {
+    constructor(path) {
+        this.path = path;
         this.products = [];
     }
 
-    validateProductCode(product) {
+    async validateProductCode(product) {
         let res = true;
-        if (this.products.length > 0) {
-            res = !this.products.some(prod => prod.code === product.code)
+        const productos = JSON.parse(await fs.readFile(path, 'utf-8'))
+        if (productos.length > 0) {
+            res = !productos.some(prod => prod.code === product.code)
         }
         return res;
     }
 
-    addProduct(prod) {
-        let product = new Product(prod);
-
+    async addProduct(product) {
         const validateProps = product.title && product.price && product.thumbnail && product.description && product.code && product.stock;
 
         if (validateProps) {
-            if (this.validateProductCode(product)) {
-                this.products.push({ ...product, id: this.products.length + 1 })
+            if (await this.validateProductCode(product)) {
+                const resultado = JSON.parse(await fs.readFile(path, 'utf-8'))
+                await resultado.push({ ...product })
+                await fs.writeFile(path, JSON.stringify(await resultado))
                 console.log('Producto agregado con éxito!')
             } else {
                 console.log('Codigo de producto repetido')
@@ -68,9 +53,10 @@ class ProductManager {
         }
     }
 
-    getProductById(id) {
+    async getProductById(id) {
         let res = 'Not found'
-        this.products.find(prod => {
+        const productos = JSON.parse(await fs.readFile(path, 'utf-8'))
+        productos.find(prod => {
             if (prod.id == id) {
                 res = prod;
             }
@@ -78,16 +64,68 @@ class ProductManager {
         return console.log(res);
     }
 
-    // showProducts() {
-    //     console.log('products', this.products)
-    // }
+    async updateProduct(id, product) {
+        let res = 'Es necesario un id y un producto a modificar'
+        if (product && id) {
+            let productos = JSON.parse(await fs.readFile(path, 'utf-8'))
+            let objIndex = productos.findIndex((obj => obj.id == id));
+            if (objIndex > -1) {
+                productos[objIndex] = { ...product, id }
+                await fs.writeFile(path, JSON.stringify(productos))
+                res = `Producto actualizado con éxito!`
+            } else {
+                res = 'No se ha encontrado un producto con ese id'
+            }
+        }
+        return console.log(res);
+    }
+
+    async deleteProduct(id) {
+        let res = 'Es necesario un id'
+        if (id) {
+            let productos = JSON.parse(await fs.readFile(path, 'utf-8'))
+            let objIndex = productos.findIndex((obj => obj.id == id));
+            if (objIndex > -1) {
+                productos.splice(objIndex, 1)
+                await fs.writeFile(path, JSON.stringify(productos))
+                res = `Producto eliminado con éxito!`
+            } else {
+                res = 'No se ha encontrado un producto con ese id'
+            }
+        }
+        return console.log(res);
+    }
+
+    async getProducts() {
+        const resultado = JSON.parse(await fs.readFile(path, 'utf-8'))
+        console.log(resultado)
+        return resultado
+    }
 }
 
-const productManager = new ProductManager();
-productManager.addProduct(pantalon)
-productManager.addProduct(pantalon)
-productManager.addProduct(remera)
-productManager.addProduct(medias)
-productManager.getProductById(2)
-productManager.getProductById(999)
-// productManager.showProducts()
+const path = './products.txt'
+
+const productManager = new ProductManager(path);
+const product1A = new Product({
+    title: 'Remera',
+    description: 'prenda de vestir',
+    price: 60,
+    thumbnail: 'remera.jpg',
+    code: 123,
+    stock: 10
+})
+const product1B = new Product({
+    title: 'Pantalon',
+    description: 'prenda de vestir',
+    price: 75,
+    thumbnail: 'pantalon.jpg',
+    code: 124,
+    stock: 5
+})
+
+await productManager.addProduct(product1A)
+await productManager.getProductById(1)
+await productManager.updateProduct(1, product1B)
+await productManager.getProducts()
+await productManager.deleteProduct(1)
+await productManager.getProducts()
