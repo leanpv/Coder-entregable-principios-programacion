@@ -45,13 +45,13 @@ export class CartManager {
 
     async getProdsCartById(id) {
         try {
-            let res = false
+            let res = { status: 404, message: `El carrito con id: ${id}, no existe` };;
             const carts = JSON.parse(await fs.readFile(this.path, 'utf-8'))
-            carts.find(cart => {
+            carts && carts.find(cart => {
                 if (cart.id == id) {
                     res = { status: 200, message: `Productos: ${JSON.stringify(cart.products)}` };
                 } else {
-                    throw new Error(`El carrito con id: ${id}, no tiene productos o no existe`)
+                    throw new Error(`El carrito con id: ${id}, no existe`)
                 }
             })
             return res;
