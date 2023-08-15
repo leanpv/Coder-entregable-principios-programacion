@@ -7,10 +7,8 @@ export class Cart {
     static increId() {
         if (this.incrementId) {
             this.incrementId++
-        } else if (!this.products) {
-            this.incrementId = 1
         } else {
-            this.incrementId = this.products.length + 1
+            this.incrementId = 1
         }
         return this.incrementId
     }
