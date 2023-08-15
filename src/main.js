@@ -1,37 +1,71 @@
 import express from 'express'
-import { Product, ProductManager } from "./productManager/productManager.js";
-import { pantalon, remera, medias } from './productManager/products.js';
-
-const app = express()
-const path = './src/DB/products.txt'
+import multer from 'multer'
+import { engine } from 'express-handlebars'
+import routerProd from './routes/products.routes.js'
+import routerCart from './routes/carts.routes.js'
+import { __dirname } from './path.js'
+import path from 'path'
 const PORT = 4000
+const app = express()
 
-app.use(express.urlencoded({ extended: true }))
+//Config
 
-const prodManager = new ProductManager(path);
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => { //cb => callback
+        cb(null, 'src/public/img') //el null hace referencia a que no envie errores
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}${file.originalname}`) //concateno la fecha actual en ms con el nombre del archivo
+        //1232312414heladera-samsung-sv
+    }
+})
 
-if ((await prodManager.getProducts()).length === 0) {
-    await prodManager.addProduct(new Product(pantalon))
-    await prodManager.addProduct(new Product(remera))
-    await prodManager.addProduct(new Product(medias))
-}
+//Middlewares
+app.use(express.json())
+app.use(express.urlencoded({ extended: true })) //URL extensas
 
-app.get('/productos/:id', async (req, res) => {
-    const prod = await prodManager.getProductById(parseInt(req.params.id))
-    prod ? res.send(`<pre>${JSON.stringify(prod, null, 4)}<pre/>`) : res.send('no encontrado')
+app.engine('handlebars', engine()) //Defino que voy a trabajar con hbs y guardo la config
+app.set('view engine', 'handlebars')
+app.set('views', path.resolve(__dirname, './views'))
+
+const upload = multer({ storage: storage })
+
+//Routes
+app.use('/static', express.static(path.join(__dirname, '/public'))) //path.join() es una concatenacion de una manera mas optima que con el +
+app.use('/api/product', routerProd)
+app.use('/api/cart', routerCart)
+//HBS
+app.get('/static', (req, res) => {
+    const user = {
+        nombre: "Lucia",
+        cargo: "Tutor"
+    }
+
+    const cursos = [
+        { numCurso: "123", dia: "LyM", horario: "Noche" },
+        { numCurso: "456", dia: "MyJ", horario: "Tarde" },
+        { numCurso: "789", dia: "S", horario: "Mañana" }
+    ]
+
+    //Indicar que plantilla voy a utilizar
+    res.render("users", {
+        titulo: "Users",
+        usuario: user,
+        rutaCSS: "users.css",
+        isTutor: user.cargo == "Tutor",
+        cursos: cursos
+    })
+
 })
 
 
-app.get('/productos', async (req, res) => {
-    const { categoria, limit } = req.query
-    const productos = await prodManager.getProducts()
-    if (limit) productos = productos.slice(0, limit)
-    res.send(`<pre>${JSON.stringify(productos, null, 4)}<pre/>`)
+app.post('/upload', upload.single('product'), (req, res) => {
+    console.log(req.file)
+    console.log(req.body)
+    res.status(200).send("Imagen cargada")
 })
 
-
-app.get('*', (req, res) => {
-    res.send('Error 404')
+//Server
+app.listen(PORT, () => {
+    console.log(`Server on port ${PORT}`)
 })
-
-app.listen(PORT, () => console.log(`Server on port: ${PORT}`))
