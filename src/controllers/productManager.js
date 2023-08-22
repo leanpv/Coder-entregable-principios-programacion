@@ -7,20 +7,11 @@ export class ProductManager {
         this.path = path
     }
 
-    static incrementarID() {
-        if (this.idIncrement) {
-            this.idIncrement++
-        } else {
-            this.idIncrement = 1
-        }
-        return this.idIncrement
-    }
-
     async getProducts(limit) {
         try {
             const prods = JSON.parse(await fs.readFile(this.path, 'utf-8'))
             const products = prods.slice(0, limit)
-            return { status: 200, message: `Productos: ${JSON.stringify(products)}` };
+            return { status: 200, message: JSON.stringify(products) };
         } catch (error) {
             error.status = 400
             return error;
@@ -40,7 +31,7 @@ export class ProductManager {
             if (existProd) {
                 throw new Error('Codigo de producto repetido')
             } else {
-                prods.push( new Product(prod) )
+                prods.push( {...new Product(prod), id: prods.length + 1} )
                 await fs.writeFile(this.path, JSON.stringify(prods))
                 return { status: 200, message: 'Producto agregado con exito' }
             }

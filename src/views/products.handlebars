@@ -1,2 +1,26 @@
 <h1>Productos</h1>
-{{>count/count}}
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>{{tableHeaders.title}}</th>
+            <th>{{tableHeaders.price}}</th>
+            <th>{{tableHeaders.code}}</th>
+            <th>{{tableHeaders.stock}}</th>
+            <th>{{tableHeaders.description}}</th>
+            <th>{{tableHeaders.id}}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each productos}}
+        <tr>
+            <td>{{this.title}}</td>
+            <td>{{this.price}}</td>
+            <td>{{this.code}}</td>
+            <td>{{this.stock}}</td>
+            <td>{{this.description}}</td>
+            <td>{{this.id}}</td>
+        </tr>
+        {{/each}}
+    </tbody>
+</table>
